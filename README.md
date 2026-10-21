@@ -1,6 +1,6 @@
 # Forum Archiver
 
-Save your Minerva classes before you lose access to Forum.
+Save your Minerva classes locally in case you for some reason will lose access to Forum in the future.
 
 Forum Archiver downloads, for the courses you choose:
 
@@ -15,7 +15,7 @@ class.
 
 ## Quick info
 
-- **Privacy.** Since recordings show your classmates and professors, please don't publicly upload or share the videos without everyone's consent. I take no responsibility for legal consequences if that is done using this tool.
+- **Privacy.** Since recordings show your classmates and professors, and also might be legally owned by Minerva somehow, please don't publicly upload or share any class content without everyone's consent (including Minerva). I take no responsibility for legal consequences if that is done using this tool.
 - **How much space?** About 250–350 MB per class, so roughly **7 GB per course**. The whole degree
   is around 100–150 GB, so an external drive might help (see `-o` below).
 - **Video quality.** Forum only lets me download its "lowres" version (which is better anyway to don't use too much storage).
