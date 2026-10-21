@@ -1,0 +1,79 @@
+name: Something doesn't work
+description: Report a problem with signing in, listing courses or downloading.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Issues are **public**, so please **never paste** your `session.json`,
+        cookies, anything from your browser's DevTools, or other personal information.
+        If the problem involves something private, message the maintainer directly instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: e.g. macOS 15 Sequoia, Windows 11
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: How did you sign in?
+      options:
+        - Login window with Google Chrome
+        - Login window with Microsoft Edge
+        - Login window with Brave
+        - "--browser safari"
+        - "--browser firefox"
+        - Other / didn't get that far
+    validations:
+      required: true
+
+  - type: input
+    id: command
+    attributes:
+      label: Command you ran
+      placeholder: uv run forum-archiver --courses 20-22
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Error message / output
+      description: Copy the text from Terminal or PowerShell (no screenshots of text, please). Remove your name if it appears.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: Forum Archiver version
+      description: Output of `uv run forum-archiver --version`
+      placeholder: forum-archiver 0.1.0
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I haven't included cookies, my session file or other personal information.
+          required: true

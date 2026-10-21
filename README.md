@@ -16,35 +16,65 @@ Forum.
 
 ---
 
-## Quick start (Mac)
+## Quick info
 
-You need about 5 minutes and, ideally, **Google Chrome** (Edge or Brave also work; Safari-only?
-[see below](#only-have-safari-or-firefox)).
+- **Privacy.** Since recordings show your classmates and professors, please don't publicly upload or share the videos without everyone's consent. I take no responsibility for legal consequences if that is done using this tool.
+- **How much space?** About 250–350 MB per class, so roughly **7 GB per course**. The whole degree
+  is around 100–150 GB, so an external drive might help (see `-o` below).
+- **Video quality.** Forum only lets me download its "lowres" version (which is better anyway to don't use too much storage).
+- **Interrupted?** Closed your laptop, or lost Wi-Fi? Run the same command again. Finished
+  videos should be skipped and half-finished ones continue where they stopped.
+- **Logged out?** If Forum ends your session, the next run opens the login window again.
 
-### 1. Get access and download the code
+---
 
-This repository is private. Ask the owner to add your GitHub account as a collaborator, then:
+## Quick start (Mac & Windows)
+
+You need a Chromium-based browser for signing in: **Google Chrome**, **Microsoft
+Edge** or **Brave**. Mac with only Safari?
+[See below](#only-have-safari-or-firefox).
+
+### 1. Download the code
 
 1. On this page, click the green **Code** button → **Download ZIP**.
-2. Double-click the ZIP in your Downloads folder to unzip it.
+2. Unzip it:
+   - **Mac:** double-click the ZIP in your Downloads folder.
+   - **Windows:** right-click the ZIP in your Downloads folder → **Extract All…** → **Extract**.
 
 ### 2. Install uv (one time)
 
-[uv](https://docs.astral.sh/uv/) runs Python programs and sets up Python for you. Open the
-**Terminal** app (⌘ + Space, type "Terminal") and paste:
+[uv](https://docs.astral.sh/uv/) runs Python programs and sets up Python for you.
+
+**Mac:** open the **Terminal** app (⌘ + Space, type "Terminal") and paste:
 
 ```sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Then **close Terminal and open it again**.
+**Windows:** open **PowerShell** (Start menu, type "PowerShell") and paste:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Then **close the Terminal / PowerShell window and open a new one**, so it finds `uv`.
 
 ### 3. Run it
 
-In Terminal, go into the unzipped folder and start the archiver:
+Go into the unzipped folder and start the archiver.
+
+**Mac** (Terminal):
 
 ```sh
 cd ~/Downloads/forum-archiver-main
+uv run forum-archiver
+```
+
+**Windows** (PowerShell). "Extract All" puts the files in a folder inside a folder of the same
+name:
+
+```powershell
+cd $HOME\Downloads\forum-archiver-main\forum-archiver-main
 uv run forum-archiver
 ```
 
@@ -52,9 +82,10 @@ The first run takes a few seconds longer while uv sets things up.
 
 ### 4. Follow the steps
 
-**Sign in.** A Chrome window opens on the Forum login page. Sign in like you normally would
-(e.g. "Sign in with Google"). As soon as you're in, the window closes by itself and the
-archiver continues. Your login is remembered, so next time this step is skipped.
+**Sign in.** A browser window (Chrome, Edge or Brave) opens on the Forum login page. Sign in
+like you normally would (e.g. "Sign in with Google"). As soon as you're in, the window closes
+by itself and the archiver continues. Your login is remembered, so next time this step is
+skipped.
 
 **Pick your courses.** You'll see every course you took, grouped by term:
 
@@ -84,29 +115,18 @@ Download 7.0 GB to /Users/you/Forum Archive? [y/N]
 
 Type `y` to start, or just press Enter to cancel.
 
-**Browse your archive.** When it's done, open **`Forum Archive/index.html`** in your home folder.
+**Browse your archive.** When it's done, open **`Forum Archive/index.html`** in your home folder
+(`/Users/<you>` on Mac, `C:\Users\<you>` on Windows).
 
 ---
 
-## Good to know
-
-- **How much space?** About 250–350 MB per class, so roughly **7 GB per course**. A whole degree
-  is around 100–150 GB, so an external drive helps (see `-o` below).
-- **Video quality.** Forum only lets students download its "lowres" version. It's still
-  1080p, just more compressed, and looks fine for watching classes.
-- **Interrupted?** Closed your laptop, or lost Wi-Fi? Run the same command again. Finished
-  videos are skipped and half-finished ones continue where they stopped.
-- **Logged out?** If Forum ends your session, the next run opens the login window again.
-- **Privacy.** Recordings show your classmates and professors. Keep your archive to yourself
-  and don't upload or share the videos.
-
 ## Options
 
-Add these after `uv run forum-archiver`:
+Add any of these after `uv run forum-archiver`. They work the same on Mac and Windows:
 
 | Option | What it does |
 |---|---|
-| `-o /Volumes/MyDrive/Minerva` | Save somewhere else, e.g. an external drive (default: `~/Forum Archive`) |
+| `-o <folder>` | Save somewhere else, e.g. an external drive (default: `Forum Archive` in your home folder) |
 | `--list` | Only show your courses, download nothing |
 | `--courses 20-27` | Choose courses without being asked |
 | `-y` | Don't ask for confirmation (useful with `--courses`) |
@@ -115,28 +135,31 @@ Add these after `uv run forum-archiver`:
 | `--login` | Sign in again, e.g. with a different account |
 | `--logout` | Forget your saved login |
 
-Example: save the readings for every course, then videos for two courses on an external
-drive:
+Example: save the readings for every course, then videos for two courses on an external drive:
 
 ```sh
 uv run forum-archiver --no-videos --courses all -y
-uv run forum-archiver --courses 21,30 -o "/Volumes/MyDrive/Forum Archive"
+uv run forum-archiver --courses 21,30 -o "<drive>/Forum Archive"
 ```
+
+Replace `<drive>` with where your drive is mounted: something like `/Volumes/MyDrive` on a Mac,
+or `E:` on Windows. Put the folder in quotes if it contains spaces.
 
 ## Only have Safari (or Firefox)?
 
 The automatic login window needs Chrome, Edge or Brave, because Safari can't be controlled
-this way. The easiest fix is to install [Chrome](https://www.google.com/chrome/). You can
-keep using Safari for everything else.
+this way. The easiest fix is to install [Chrome](https://www.google.com/chrome/). (On
+Windows, Edge is always there, so this doesn't apply.)
 
 Otherwise you can borrow the login from your normal browser:
 
-- **Safari**
+- **Safari** (Mac)
   1. Log in to [forum.minerva.edu](https://forum.minerva.edu) in Safari.
   2. Give Terminal permission to read Safari's data: **System Settings → Privacy & Security →
      Full Disk Access** → turn on **Terminal** (restart Terminal afterwards).
   3. Run `uv run --extra browser-cookies forum-archiver --browser safari`.
-- **Firefox**: log in to Forum in Firefox, then run `uv run forum-archiver --browser firefox`.
+- **Firefox** (Mac or Windows): log in to Forum in Firefox, then run
+  `uv run forum-archiver --browser firefox`.
 
 ## What you get
 
@@ -156,44 +179,42 @@ Forum Archive/
             └── 02 …
 ```
 
-`readings.md` files drop straight into note apps like Obsidian or Notion.
+On Windows, long course and class names are shortened to stay within Windows' path-length limit.
 
 **Not included:** your answers in the interactive pre-class workbooks (PCW). Those live in a
-separate Minerva app that this tool can't export yet.
+separate Minerva app that this tool doesn't have access to.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `command not found: uv` | Close and reopen Terminal after installing uv. |
-| `no such file or directory` after `cd` | The folder name may differ. Type `cd ` (with a space), drag the unzipped folder onto the Terminal window, and press Enter. |
+| `command not found: uv` (Mac) / `uv is not recognized` (Windows) | Close and reopen Terminal / PowerShell after installing uv. |
+| Windows: "running scripts is disabled on this system" when installing uv | Copy the install command exactly as shown; it starts with `powershell -ExecutionPolicy ByPass`. |
+| `cd` says the folder doesn't exist | The folder name may differ. Type `cd ` (with a space), drag the folder that contains `README.md` onto the window, and press Enter. |
+| `No such file or directory: pyproject.toml` / "no `project` table found" | You're one folder too high (common on Windows). `cd` into the inner `forum-archiver-main` folder. |
 | "no Chrome, Edge, Brave or Chromium found" | Install Chrome, or see [Only have Safari](#only-have-safari-or-firefox). |
 | "the login browser exited right away" | A login window from an earlier run is still open. Close it and run again. |
 | Sign-in loops or fails | Run `uv run forum-archiver --logout`, then try again. |
 | A course shows 0 videos | That course had no recordings on Forum (e.g. study groups, office hours). |
 | `NOT ENOUGH SPACE` | Pick fewer courses, free up space, or save to an external drive with `-o`. |
 
-## For developers
+## Reporting problems
 
-The archiver talks to the same undocumented JSON API that the Forum web app uses
-(`https://forum.minerva.edu/api/v1/...`), with your session cookie:
+Something not working, or not covered in [Troubleshooting](#troubleshooting)?
+[Open an issue](https://github.com/g-nilsson/forum-archiver/issues/new/choose) and fill in the
+short form. Please include:
 
-| Data | Endpoint |
-|---|---|
-| Account / terms | `GET /users/self`, `GET /terms` |
-| Your sections | `GET /sections?role=student&state=all&term-id=…` |
-| Past classes (incl. recording sessions) | `GET /courses/{course}/sections/{section}/paginated-classes?category=past` |
-| Pre-class assignment & readings | `GET /classes/{class}/assignments` |
-| Video URLs (signed, expire quickly) | `GET /recording-sessions/{id}/generate_recording_urls_for_recording_ression` |
-| Attached files | `GET /resources/{id}/signed_url?content-disposition=attachment` |
+- Mac or Windows, and which version
+- which browser you signed in with
+- the exact command you ran
+- the error message, copied as text
+- the output of `uv run forum-archiver --version`
 
-Login (`forum_archiver/auth.py`) opens a Chromium-based browser with a separate profile and
-`--remote-debugging-port`, waits for you to sign in, and reads the session cookie over the
-Chrome DevTools Protocol. It uses a tiny built-in WebSocket client, so the only dependency is
-`requests`. The session is saved (readable only by you) in
-`~/Library/Application Support/forum-archiver/` on macOS, `~/.config/forum-archiver/` on Linux,
-or `%APPDATA%\forum-archiver\` on Windows.
+> ⚠️ **Issues are public.** Never paste your `session.json`, cookies, anything from your
+> browser's DevTools, or other personal information.
 
-Run from a checkout with `uv run forum-archiver` or `python3 -m forum_archiver`. If Forum
-changes its API, `--inspect` saves sample responses to `<output>/_inspect/` to see what
-changed.
+No GitHub account, or the problem involves something private? Message me directly instead.
+
+## License
+
+[MIT](LICENSE)

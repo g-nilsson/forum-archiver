@@ -67,6 +67,8 @@ def as_id(v):
 
 
 def safe_name(s, limit=90):
+    if os.name == "nt":  # stay well inside Windows' 260-character path limit
+        limit = min(limit, 50)
     s = re.sub(r'[\\/:*?"<>|\x00-\x1f]+', " ", str(s))
     s = re.sub(r"\s+", " ", s).strip().strip(".")
     return s[:limit].rstrip() or "untitled"
@@ -791,6 +793,9 @@ def main():
     ap.add_argument("--inspect", action="store_true", help="save sample API responses for debugging")
     ap.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     opts = ap.parse_args()
+
+    if os.name == "nt":
+        os.system("")  # turns on ANSI escape handling in older Windows consoles (for the progress line)
 
     if opts.logout:
         auth.logout()
