@@ -339,7 +339,9 @@ class ClassPlan:
     dir: Path
     title: str
     date: str
+    n: int                   # position in the course's full class list, as shown to the user
     recordings: list[Recording] = field(default_factory=list)
+    selected: bool = True
 
 
 @dataclass
@@ -349,33 +351,97 @@ class CoursePlan:
     classes: list[ClassPlan] = field(default_factory=list)
 
     @property
+    def selected(self):
+        return [c for c in self.classes if c.selected]
+
+    @property
     def recordings(self):
-        return [r for c in self.classes for r in c.recordings]
+        return [r for c in self.selected for r in c.recordings]
 
 
-def existing_video(stem: Path):
-    if not stem.parent.exists():
+def read_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         return None
-    return next((p for p in stem.parent.glob(stem.name + ".*")
-                 if p.suffix.lower() in VIDEO_EXTS and ".part" not in p.name), None)
 
 
-def plan_course(forum: Forum, e: Enrollment, out_root: Path):
-    course_dir = out_root / safe_name(e.term_name) / safe_name(e.label)
+def find_existing(out_root: Path):
+    """Course and class folders already in the archive, by Forum id. A course or class whose name has
+    changed since (or was shortened differently) keeps its folder instead of being downloaded again."""
+    sections = {as_id(read_json(f)): f.parent for f in out_root.glob("*/*/section.json")}
+    classes = {as_id(read_json(f)): f.parent for f in out_root.glob("*/*/classes/*/class.json")}
+    sections.pop(None, None)
+    classes.pop(None, None)
+    return sections, classes
+
+
+def existing_video(cdir: Path, stem: str, session_id):
+    """Finished video of this recording session: found by the session id saved next to it, else by name."""
+    if not cdir.exists():
+        return None
+    stems = [m.stem for m in cdir.glob("recording*.json") if first(read_json(m), "recording_session") == session_id]
+    own = read_json(cdir / f"{stem}.json")
+    if own is None or first(own, "recording_session") == session_id:
+        stems.append(stem)
+    for s in stems:
+        video = next((p for p in cdir.glob(s + ".*") if p.suffix.lower() in VIDEO_EXTS and ".part" not in p.name), None)
+        if video:
+            return video
+    return None
+
+
+def plan_course(forum: Forum, e: Enrollment, out_root: Path, known):
+    known_sections, known_classes = known
+    course_dir = known_sections.get(e.section_id) or out_root / safe_name(e.term_name) / safe_name(e.label)
     plan = CoursePlan(e, course_dir)
     classes = sorted(forum.past_classes(e.course_id, e.section_id), key=lambda c: str(first(c, "date", default="")))
     for i, c in enumerate(classes, 1):
         title = first(c, "title", "name", default=f"Class {as_id(c)}")
         date = str(first(c, "date", default=""))[:10]
-        cp = ClassPlan(c, course_dir / "classes" / safe_name(f"{i:02d} {date} {title}"), title, date)
+        cdir = known_classes.get(as_id(c)) or course_dir / "classes" / safe_name(f"{i:02d} {date} {title}")
+        cp = ClassPlan(c, cdir, title, date, i)
         sessions = [s for s in c.get("recording_sessions") or [] if isinstance(s, dict)
                     and s.get("recording_state") != "HIDDEN"]
         sessions.sort(key=lambda s: str(first(s, "recording_started", default="")))
         for n, s in enumerate(sessions, 1):
-            stem = cp.dir / ("recording" if len(sessions) == 1 else f"recording-{n}")
-            cp.recordings.append(Recording(as_id(s), stem, existing_video(stem)))
+            stem = "recording" if len(sessions) == 1 else f"recording-{n}"
+            cp.recordings.append(Recording(as_id(s), cdir / stem, existing_video(cdir, stem, as_id(s))))
         plan.classes.append(cp)
     return plan
+
+
+def print_classes(plan: CoursePlan):
+    print(f"\n  {plan.enrollment.label}")
+    for cp in plan.classes:
+        if not cp.recordings:
+            mark = "no recording"
+        elif all(r.existing for r in cp.recordings):
+            mark = "✓ downloaded"
+        else:
+            mark = ""
+        title = cp.title if len(cp.title) <= 70 else cp.title[:69] + "…"
+        print(f"  {cp.n:>4}  {cp.date}  {title:<70}  {mark}")
+    print()
+
+
+def choose_classes(plans, spec=None):
+    """Mark the classes to download in each course: from spec ('1-5,8') if given, otherwise by asking."""
+    for p in plans:
+        if spec is None:
+            print_classes(p)
+        while True:
+            text = spec if spec is not None else input(
+                f"Classes to download from {p.enrollment.code or 'this course'} (e.g. 1-5,8; Enter for all): ")
+            try:
+                picked = set(parse_selection(text, len(p.classes))) if text.strip() else None
+                break
+            except ValueError as err:
+                if spec is not None:
+                    sys.exit(f"Invalid --classes for {p.enrollment.label}: {err}")
+                print(f"  {err}; try again.")
+        for cp in p.classes:
+            cp.selected = picked is None or cp.n in picked
 
 
 DL = requests.Session()
@@ -431,7 +497,7 @@ def print_plan(plans, free):
         missing += sum(1 for r in recs if not r.existing and not r.variant)
         label = p.enrollment.label
         label = label if len(label) <= width else label[:width - 1] + "…"
-        print(f"  {label:<{width}}  {len(p.classes):>7}  {len(new):>6}  {human(size):>9}")
+        print(f"  {label:<{width}}  {len(p.selected):>7}  {len(new):>6}  {human(size):>9}")
     print(f"  {'':<{width}}  {'':>7}  {'':>6}  {'─' * 9}")
     print(f"  {'Total to download':<{width}}  {'':>7}  {'':>6}  {human(total):>9}\n")
     if have:
@@ -617,18 +683,16 @@ def archive_course(forum: Forum, plan: CoursePlan, opts):
     e = plan.enrollment
     write_json(plan.dir / "section.json", e.section)
     write_json(plan.dir / "course.json", e.course)
-    entries = []
-    for i, cp in enumerate(plan.classes, 1):
-        log(f"    [{i}/{len(plan.classes)}] {cp.date} {cp.title}")
+    chosen = plan.selected
+    for i, cp in enumerate(chosen, 1):
+        log(f"    [{i}/{len(chosen)}] {cp.date} {cp.title}")
         write_json(cp.dir / "class.json", cp.summary)
-        entry = {"n": i, "date": cp.date, "title": cp.title, "dir": cp.dir.relative_to(plan.dir).as_posix(),
-                 "videos": [], "readings": None}
         if opts.readings:
-            entry["readings"] = archive_readings(forum, cp, opts.files)
+            archive_readings(forum, cp, opts.files)
         if opts.videos:
-            entry["videos"] = [p.name for p in map(lambda r: download_recording(forum, r), cp.recordings) if p]
-        entries.append(entry)
-    write_course_index(plan.dir, e, entries)
+            for rec in cp.recordings:
+                download_recording(forum, rec)
+    write_course_index(plan)
 
 
 # --------------------------------------------------------------------------- offline index pages
@@ -649,7 +713,19 @@ def link(href, text):
     return f'<a href="{html.escape(href)}">{html.escape(text)}</a>'
 
 
-def write_course_index(course_dir: Path, e: Enrollment, entries):
+def write_course_index(plan: CoursePlan):
+    """Course page listing every class that has something on disk, whichever run downloaded it."""
+    course_dir, e = plan.dir, plan.enrollment
+    entries = []
+    for cp in plan.classes:
+        if not cp.dir.exists():
+            continue
+        videos = sorted(p.name for p in cp.dir.iterdir() if p.suffix.lower() in VIDEO_EXTS and ".part" not in p.name)
+        readings = "readings.html" if (cp.dir / "readings.html").exists() else None
+        if videos or readings:
+            entries.append({"n": cp.n, "date": cp.date, "title": cp.title,
+                            "dir": Path(os.path.relpath(cp.dir, course_dir)).as_posix(),
+                            "videos": videos, "readings": readings})
     write_json(course_dir / "classes.json", entries)
     rows = []
     for en in entries:
@@ -791,6 +867,7 @@ def main():
                     help="output folder (default: ~/Forum Archive)")
     ap.add_argument("--list", action="store_true", help="list your courses and exit")
     ap.add_argument("--courses", help="courses to download without prompting, e.g. '1,3,5-7' or 'all'")
+    ap.add_argument("--classes", help="only these classes of each chosen course, e.g. '1-5,8' (numbers as listed)")
     ap.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation before downloading")
     ap.add_argument("--no-videos", dest="videos", action="store_false", help="skip class recordings")
     ap.add_argument("--no-readings", dest="readings", action="store_false", help="skip readings / assignment text")
@@ -842,13 +919,23 @@ def main():
             return
 
         plans = []
+        known = find_existing(out_root)
         for n, e in enumerate(picked, 1):
             status(f"Listing classes {n}/{len(picked)}: {e.label}")
             try:
-                plans.append(plan_course(forum, e, out_root))
+                plans.append(plan_course(forum, e, out_root, known))
             except ForumError as err:
                 log(f"\n  {e.label}: could not list classes ({err})")
         status("")
+
+        if opts.classes:
+            choose_classes(plans, opts.classes)
+        elif not opts.courses and input("Download every class in the chosen course(s)? [Y/n] ").strip().lower() in ("n", "no"):
+            choose_classes(plans)
+        plans = [p for p in plans if p.selected]
+        if not plans:
+            print("No classes chosen. Nothing downloaded.")
+            return
 
         out_root.mkdir(parents=True, exist_ok=True)
         if opts.videos:
@@ -856,7 +943,7 @@ def main():
             total = print_plan(plans, shutil.disk_usage(out_root).free)
         else:
             total = 0
-            print(f"\n  {sum(len(p.classes) for p in plans)} classes in {len(plans)} course(s); videos skipped.\n")
+            print(f"\n  {sum(len(p.selected) for p in plans)} classes in {len(plans)} course(s); videos skipped.\n")
         if not opts.yes:
             what = "Download" + (f" {human(total)}" if opts.videos else "")
             if input(f"{what} to {out_root}? [y/N] ").strip().lower() not in ("y", "yes"):

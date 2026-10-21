@@ -11,9 +11,6 @@ Forum Archiver downloads, for the courses you choose:
 It also builds a small offline website (`index.html`) to browse everything by term, course and
 class.
 
-It signs in as you and reads only what Forum already shows you. It never changes anything on
-Forum.
-
 ---
 
 ## Quick info
@@ -24,6 +21,8 @@ Forum.
 - **Video quality.** Forum only lets me download its "lowres" version (which is better anyway to don't use too much storage).
 - **Interrupted?** Closed your laptop, or lost Wi-Fi? Run the same command again. Finished
   videos should be skipped and half-finished ones continue where they stopped.
+- **Never downloads twice.** Anything already in your archive is recognised and skipped, even
+  if a course or class was renamed on Forum since, so it's safe to run it as often as you like.
 - **Logged out?** If Forum ends your session, the next run opens the login window again.
 
 ---
@@ -100,6 +99,18 @@ Courses to download (e.g. 1,3,5-7 or 'all'):
 
 Type the numbers you want, e.g. `20-22`, `4,5,21`, or `all`, and press Enter.
 
+**Pick classes (optional).** Next it asks `Download every class in the chosen course(s)? [Y/n]`.
+Press Enter to get the whole course. Type `n` to pick individual classes instead: you'll see the
+class list, with the ones you already have marked, and choose them the same way:
+
+```
+  CS110 - Problem Solving with Data Structures and Algorithms (…)
+     1  2022-09-05  CS110 Session 1 - …                                    ✓ downloaded
+     2  2022-09-07  CS110 Session 2 - …
+     …
+Classes to download from CS110 (e.g. 1-5,8; Enter for all):
+```
+
 **Check the size before anything downloads.** It checks every recording and tells you how much
 space you need versus how much you have:
 
@@ -137,6 +148,7 @@ Add any of these after `uv run forum-archiver`. They work the same on Mac and Wi
 | `--open` | Open your archive in the browser, download nothing (add `-o <folder>` if you saved it elsewhere) |
 | `--list` | Only show your courses, download nothing |
 | `--courses 20-27` | Choose courses without being asked |
+| `--classes 1-5,8` | Only these classes of each chosen course (numbers as in the class list) |
 | `-y` | Don't ask for confirmation (useful with `--courses`) |
 | `--no-videos` | Skip videos and only save readings and files (fast, a few MB) |
 | `--no-readings`, `--no-files` | Skip readings or attached files |
