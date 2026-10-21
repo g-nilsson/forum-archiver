@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "forum-archiver"
+dynamic = ["version"]
+description = "Back up your Minerva Forum classes: recordings, readings and attached files."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["requests>=2.25"]
+
+[project.optional-dependencies]
+# Only needed for --browser safari/chrome/edge/brave (reading an everyday browser's cookies).
+browser-cookies = ["yt-dlp"]
+
+[project.scripts]
+forum-archiver = "forum_archiver.cli:main"
+
+[tool.setuptools]
+packages = ["forum_archiver"]
+
+[tool.setuptools.dynamic]
+version = { attr = "forum_archiver.__version__" }

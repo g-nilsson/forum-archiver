@@ -1,0 +1,7 @@
+cookie.txt
+Forum Archive/
+__pycache__/
+*.egg-info/
+build/
+dist/
+.venv/
