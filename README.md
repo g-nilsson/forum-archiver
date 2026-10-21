@@ -115,8 +115,15 @@ Download 7.0 GB to /Users/you/Forum Archive? [y/N]
 
 Type `y` to start, or just press Enter to cancel.
 
-**Browse your archive.** When it's done, open **`Forum Archive/index.html`** in your home folder
-(`/Users/<you>` on Mac, `C:\Users\<you>` on Windows).
+**Browse your archive.** When it's done, it asks `Open it in your browser? [Y/n]`. Press Enter,
+and your archive opens in your browser. To open it again later, run this from the same folder:
+
+```sh
+uv run forum-archiver --open
+```
+
+The archive is saved in **`Forum Archive`** in your home folder (`/Users/<you>` on Mac,
+`C:\Users\<you>` on Windows).
 
 ---
 
@@ -127,6 +134,7 @@ Add any of these after `uv run forum-archiver`. They work the same on Mac and Wi
 | Option | What it does |
 |---|---|
 | `-o <folder>` | Save somewhere else, e.g. an external drive (default: `Forum Archive` in your home folder) |
+| `--open` | Open your archive in the browser, download nothing (add `-o <folder>` if you saved it elsewhere) |
 | `--list` | Only show your courses, download nothing |
 | `--courses 20-27` | Choose courses without being asked |
 | `-y` | Don't ask for confirmation (useful with `--courses`) |

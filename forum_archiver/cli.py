@@ -19,6 +19,7 @@ import re
 import shutil
 import sys
 import time
+import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -663,6 +664,17 @@ def write_course_index(course_dir: Path, e: Enrollment, entries):
     (course_dir / "index.html").write_text(PAGE.format(title=html.escape(e.label), body=body), encoding="utf-8")
 
 
+def open_archive(out_root: Path):
+    index = out_root / "index.html"
+    if not index.exists():
+        sys.exit(f"No archive found in {out_root}.\n"
+                 "Download something first, or add -o with the folder you saved to.")
+    if webbrowser.open(index.as_uri()):
+        print(f"Opened {index} in your browser.")
+    else:
+        print(f"Couldn't open a browser. Open this file yourself: {index}")
+
+
 def write_root_index(out_root: Path):
     items = []
     for idx in sorted(out_root.glob("*/*/index.html")):
@@ -783,6 +795,7 @@ def main():
     ap.add_argument("--no-videos", dest="videos", action="store_false", help="skip class recordings")
     ap.add_argument("--no-readings", dest="readings", action="store_false", help="skip readings / assignment text")
     ap.add_argument("--no-files", dest="files", action="store_false", help="skip files attached to assignments")
+    ap.add_argument("--open", action="store_true", help="open your archive in the browser (no download)")
     login = ap.add_argument_group("signing in (by default a browser window opens the first time)")
     login.add_argument("--login", action="store_true", help="sign in again even if a session is saved")
     login.add_argument("--logout", action="store_true", help="forget the saved session and exit")
@@ -802,6 +815,9 @@ def main():
         print("Signed out: the saved session and login-window profile are deleted.")
         return
     out_root = Path(opts.out).expanduser().resolve()
+    if opts.open:
+        open_archive(out_root)
+        return
     try:
         forum, me = connect(opts)
         log(f"Signed in to Forum as {first(me, 'first_name', 'name', 'email', default='(unknown)')}")
@@ -851,7 +867,9 @@ def main():
             log(f"\n[{n}/{len(plans)}] {plan.enrollment.term_name} · {plan.enrollment.label}")
             archive_course(forum, plan, opts)
             write_root_index(out_root)
-        log(f"\nDone. Open {out_root / 'index.html'} to browse the archive.")
+        log(f"\nDone. Your archive is in {out_root}")
+        if not opts.yes and input("Open it in your browser? [Y/n] ").strip().lower() in ("", "y", "yes"):
+            open_archive(out_root)
     except NotLoggedIn:
         sys.exit("\nForum ended the session. Run again to sign in; finished files are skipped.")
     except (KeyboardInterrupt, EOFError):
